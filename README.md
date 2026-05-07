@@ -129,4 +129,6 @@ Current status on this machine:
 
 - Netlify is no longer the target runtime for this project.
 - Harness docs for task execution and verification live under [harness](./harness).
+- debug redeploy trigger
+
   
