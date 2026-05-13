@@ -102,13 +102,18 @@ function getDatabaseUrl() {
 }
 
 function normalizeConnectionStringSslMode(connectionString: string) {
+  // pg < v9 treats 'require', 'prefer', and 'verify-ca' as aliases for
+  // 'verify-full', which validates the TLS certificate CN against the
+  // hostname. Neon pooler certificates do not match the pooler hostname,
+  // so verify-full would fail. We add uselibpqcompat=true so these modes
+  // use standard libpq semantics (e.g., 'require' = enforce TLS without
+  // hostname verification), which works correctly with Neon pooler.
   try {
     const parsed = new URL(connectionString);
     const sslMode = parsed.searchParams.get('sslmode')?.trim().toLowerCase();
 
-    if (sslMode === 'prefer' || sslMode === 'require' || sslMode === 'verify-ca') {
-      // Keep today's strict behavior and silence pg v9 migration warning.
-      parsed.searchParams.set('sslmode', 'verify-full');
+    if (sslMode && sslMode !== 'disable' && sslMode !== 'verify-full') {
+      parsed.searchParams.set('uselibpqcompat', 'true');
     }
 
     return parsed.toString();
@@ -370,4 +375,36 @@ export function getDb(): DatabaseClient {
 
   db = createSqlClient('postgres');
   return db;
+}
+
+function maskConnectionString(url: string | null): string {
+  if (!url) return '(not set)';
+  try {
+    const parsed = new URL(url);
+    parsed.password = '***';
+    return parsed.toString();
+  } catch {
+    return '(invalid URL)';
+  }
+}
+
+export function getDbDiagnostics() {
+  const rawUrl = getDatabaseUrl();
+  const maskedUrl = maskConnectionString(rawUrl);
+  let sslMode = '(not set)';
+  if (rawUrl) {
+    try {
+      sslMode = new URL(rawUrl).searchParams.get('sslmode') ?? 'default';
+    } catch {
+      sslMode = '(parse error)';
+    }
+  }
+  return {
+    databaseUrl: maskedUrl,
+    sslMode,
+    pgLoadError,
+    poolInitialized: pool !== null,
+    hasDbClient: db !== null,
+    embeddedEnabled: isEmbeddedDbEnabled(),
+  };
 }

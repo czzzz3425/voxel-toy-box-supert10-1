@@ -4,6 +4,7 @@ import path from 'node:path';
 import { URL } from 'node:url';
 import legoKimiHandler from '../api/lego-kimi';
 import dbHealthHandler from '../api/debug/db-health';
+import dbFeedbackHandler from '../api/debug/db-feedback';
 import generationLogsHandler from '../api/debug/generation-logs';
 
 type LocalRequest = {
@@ -46,7 +47,11 @@ function loadLocalEnv() {
     }
 
     const key = trimmed.slice(0, separatorIndex).trim();
-    const value = trimmed.slice(separatorIndex + 1).trim();
+    let value = trimmed.slice(separatorIndex + 1).trim();
+    // Strip surrounding quotes from .env.local (Vercel CLI generates quoted values).
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
+    }
 
     if (!process.env[key]) {
       process.env[key] = value;
@@ -59,6 +64,7 @@ loadLocalEnv();
 const routes = new Map<string, Handler>([
   ['/api/lego-kimi', legoKimiHandler as Handler],
   ['/api/debug/db-health', dbHealthHandler as Handler],
+  ['/api/debug/db-feedback', dbFeedbackHandler as Handler],
   ['/api/debug/generation-logs', generationLogsHandler as Handler],
 ]);
 
