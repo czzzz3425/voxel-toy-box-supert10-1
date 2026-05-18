@@ -5,6 +5,13 @@ const TEMPLATE_KEYWORDS: Record<string, string[]> = {
   Cat: ['cat', 'kitten', 'feline'],
   Rabbit: ['rabbit', 'bunny', 'hare'],
   Twins: ['twin', 'double', 'pair', 'two characters'],
+  Dog: ['dog', 'corgi', 'puppy', 'canine'],
+  Fox: ['fox', 'red fox', 'forest fox', 'arctic fox'],
+  Penguin: ['penguin', 'baby penguin', 'winter penguin', 'antarctic'],
+  Sedan: ['car', 'sedan', 'city car', 'small car', 'taxi', 'compact car'],
+  Bus: ['bus', 'city bus', 'school bus', 'shuttle bus', 'public bus'],
+  FireTruck: ['fire truck', 'fire engine', 'emergency truck', 'rescue truck', 'ladder truck'],
+  House: ['house', 'home', 'cabin', 'cottage', 'small house'],
 };
 
 export function inferTemplateMatch(prompt: string, intent?: ModelIntent): TemplateMatchResult {
