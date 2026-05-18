@@ -8,9 +8,11 @@ const TEMPLATE_KEYWORDS: Record<string, string[]> = {
   Dog: ['dog', 'corgi', 'puppy', 'canine'],
   Fox: ['fox', 'red fox', 'forest fox', 'arctic fox'],
   Penguin: ['penguin', 'baby penguin', 'winter penguin', 'antarctic'],
+  Turtle: ['turtle', 'sea turtle', 'pond turtle', 'green turtle'],
   Sedan: ['car', 'sedan', 'city car', 'small car', 'taxi', 'compact car'],
   Bus: ['bus', 'city bus', 'school bus', 'shuttle bus', 'public bus'],
   FireTruck: ['fire truck', 'fire engine', 'emergency truck', 'rescue truck', 'ladder truck'],
+  Boat: ['boat', 'small boat', 'ship', 'fishing boat', 'rescue boat', 'watercraft'],
   House: ['house', 'home', 'cabin', 'cottage', 'small house'],
 };
 

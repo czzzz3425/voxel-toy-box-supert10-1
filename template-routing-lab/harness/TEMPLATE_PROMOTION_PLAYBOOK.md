@@ -194,3 +194,34 @@
 下一步执行建议：
 - 基于相同流程推进第四轮：`exp-turtle-low`、`exp-boat-small`
 - 数据库侧继续沉淀升格事件：bus/fire-truck 候选->升格
+
+## 第四轮候选精修结论（2026-05-18）
+
+### exp-turtle-low 升格完成
+- templateId: `exp-turtle-low`
+- fromStatus: `candidate`
+- toStatus: `active`
+- sourceType: `generator`
+- geometrySource: `src/templates/generators/turtleLowGenerator.ts#generateLowTurtle`
+- positivePrompts: `turtle`, `cute turtle`, `sea turtle`, `pond turtle`
+- negativePrompts: `car`, `bus`, `house`, `penguin`
+- rankingCheck: `cute turtle` 命中 `exp-turtle-low`
+- routeCheck: `cute turtle` 路由为 `reuse`
+- notes: 已补低矮龟壳、短头部、四肢、尾部、眼睛和 shell pattern 变体；默认生成约 190 voxels，落在 `130-195` 预算内。
+
+### exp-boat-small 升格完成
+- templateId: `exp-boat-small`
+- fromStatus: `candidate`
+- toStatus: `active`
+- sourceType: `generator`
+- geometrySource: `src/templates/generators/boatSmallGenerator.ts#generateSmallBoat`
+- positivePrompts: `boat`, `small boat`, `fishing boat`, `rescue boat`
+- negativePrompts: `animal`, `house`, `car`, `penguin`
+- rankingCheck: `small boat` 命中 `exp-boat-small`
+- routeCheck: `small boat` 路由为 `reuse`
+- notes: 已补船体、甲板、船头、船尾、舱体和 cabin variant；默认生成约 148 voxels，落在 `140-210` 预算内。
+
+### 第四轮结果
+- `EXPANSION_TEMPLATE_REGISTRY` 当前无剩余 `candidate`。
+- 当前模板库共 `13` 个模板，`13` 个均为 `active`。
+- 本轮同时同步主 API `templateMatcher`，使 `turtle` 与 `boat` 能写入 `template_match`。

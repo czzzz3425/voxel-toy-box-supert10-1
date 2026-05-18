@@ -5,3 +5,5 @@ export * from './houseSmallGenerator.js';
 export * from './dogCorgiGenerator.js';
 export * from './foxSittingGenerator.js';
 export * from './penguinStandingGenerator.js';
+export * from './turtleLowGenerator.js';
+export * from './boatSmallGenerator.js';
