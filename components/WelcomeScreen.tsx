@@ -23,7 +23,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ visible }) => {
                 Voxel Toy Box
             </h1>
             <div className="text-sm font-extrabold text-indigo-600 uppercase tracking-[0.3em]">
-                Powered by Kimi
+                Powered by Gemini
             </div>
         </div>
         
