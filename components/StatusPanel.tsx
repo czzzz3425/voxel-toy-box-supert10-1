@@ -1,6 +1,6 @@
 import React from 'react';
 import { GenerationResultMeta } from './GenerationResultMeta';
-import { ErrorDisplay, GenerationError } from './ErrorDisplay';
+import { GenerationError } from './ErrorDisplay';
 import { GenerationMetadata, TemplateMatchResult } from '../types';
 import { TemplateMatchResultDisplay } from './TemplateMatchResultDisplay';
 
@@ -21,7 +21,7 @@ export const StatusPanel: React.FC<StatusPanelProps> = ({
 }) => {
   if (error) {
     return (
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 w-full max-w-md px-4">
+      <div className="absolute top-24 left-1/2 -translate-x-1/2 z-20 w-full max-w-md px-4">
         <GenerationError
           error={error}
           onRetry={onRetry}
@@ -34,7 +34,7 @@ export const StatusPanel: React.FC<StatusPanelProps> = ({
   if (!metadata) return null;
 
   return (
-    <div className="absolute top-4 left-4 z-20 w-80 space-y-3">
+    <div className="absolute top-24 left-4 z-20 w-80 max-w-[calc(100vw-2rem)] space-y-3">
       <GenerationResultMeta metadata={metadata} />
       {templateMatch && templateMatch.matched && (
         <TemplateMatchResultDisplay result={templateMatch} />

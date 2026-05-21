@@ -24,7 +24,7 @@ export const PromptInput: React.FC<PromptInputProps> = ({
     <form onSubmit={handleSubmit} className="w-full">
       <div className="relative flex items-center gap-2">
         <div className="relative flex-1">
-          <Sparkles className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} sm:size={18} />
+          <Sparkles className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
           <input
             type="text"
             value={prompt}
@@ -41,13 +41,13 @@ export const PromptInput: React.FC<PromptInputProps> = ({
         >
           {isGenerating ? (
             <>
-              <Loader2 size={16} sm:size={18} className="animate-spin" />
+              <Loader2 size={16} className="animate-spin" />
               <span className="hidden sm:inline">Generating...</span>
               <span className="sm:hidden">...</span>
             </>
           ) : (
             <>
-              <Send size={16} sm:size={18} />
+              <Send size={16} />
               <span>Generate</span>
             </>
           )}

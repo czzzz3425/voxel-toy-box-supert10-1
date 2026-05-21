@@ -5,13 +5,27 @@ async function api<T>(
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/';
   const normalizedBase = API_BASE_URL.endsWith('/') ? API_BASE_URL : `${API_BASE_URL}/`;
 
-  const response = await fetch(`${normalizedBase}${endpoint}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-    ...options,
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${normalizedBase}${endpoint}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      ...options,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error ?? '');
+
+    if (message.includes('Failed to fetch') || message.includes('ERR_CONNECTION_CLOSED')) {
+      throw new Error(
+        'The request connection was interrupted. If you are using expert mode, Gemini may be temporarily busy. Please retry in a few seconds.'
+      );
+    }
+
+    throw error;
+  }
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -19,6 +33,7 @@ async function api<T>(
       | {
           error?: string;
           message?: string;
+          errorCode?: string;
           databaseReport?: {
             health?: { ok?: boolean; mode?: string; message?: string };
             write?: { ok?: boolean; message?: string };
@@ -30,6 +45,7 @@ async function api<T>(
       parsed = JSON.parse(errorText) as {
         error?: string;
         message?: string;
+        errorCode?: string;
         databaseReport?: {
           health?: { ok?: boolean; mode?: string; message?: string };
           write?: { ok?: boolean; message?: string };
@@ -43,9 +59,17 @@ async function api<T>(
       throw new Error(errorText || 'Request failed.');
     }
 
-    const baseMessage = parsed.error || parsed.message || errorText || 'Request failed.';
+    let baseMessage = parsed.error || parsed.message || errorText || 'Request failed.';
     const healthMessage = parsed.databaseReport?.health?.message;
     const writeMessage = parsed.databaseReport?.write?.message;
+
+    if (response.status === 429 || parsed.errorCode === 'RATE_LIMITED') {
+      baseMessage =
+        'Gemini request quota is temporarily exhausted. Please wait a moment and retry.';
+    } else if (response.status === 503 || parsed.errorCode === 'MODEL_UNAVAILABLE') {
+      baseMessage =
+        'Gemini is temporarily busy, especially for expert mode. Please retry in a few seconds.';
+    }
 
     if (healthMessage || writeMessage) {
       const reportSummary = [healthMessage, writeMessage].filter(Boolean).join(' | ');

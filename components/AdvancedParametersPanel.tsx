@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ChevronDown, Palette, Layers, Maximize2, Repeat, Settings2 } from 'lucide-react';
+import React from 'react';
+import { ChevronDown, Palette, Maximize2, Repeat, Settings2 } from 'lucide-react';
 
 export interface AdvancedParams {
   style: 'realistic' | 'cartoon' | 'abstract';
@@ -45,7 +45,7 @@ export const AdvancedParametersPanel: React.FC<AdvancedParametersPanelProps> = (
         <div className="px-3 sm:px-4 pb-3 sm:pb-4 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
           <ParamSelect
             label="Style"
-            icon={<Palette size={14} sm:size={16} />}
+            icon={<Palette size={16} />}
             value={params.style}
             options={[
               { value: 'realistic', label: 'Realistic' },
@@ -57,7 +57,7 @@ export const AdvancedParametersPanel: React.FC<AdvancedParametersPanelProps> = (
 
           <ParamSelect
             label="Color"
-            icon={<Palette size={14} sm:size={16} />}
+            icon={<Palette size={16} />}
             value={params.colorScheme}
             options={[
               { value: 'vibrant', label: 'Vibrant' },
@@ -70,7 +70,7 @@ export const AdvancedParametersPanel: React.FC<AdvancedParametersPanelProps> = (
 
           <ParamSelect
             label="Size"
-            icon={<Maximize2 size={14} sm:size={16} />}
+            icon={<Maximize2 size={16} />}
             value={params.size}
             options={[
               { value: 'small', label: 'Small' },
@@ -82,7 +82,7 @@ export const AdvancedParametersPanel: React.FC<AdvancedParametersPanelProps> = (
 
           <ParamSelect
             label="Symmetry"
-            icon={<Repeat size={14} sm:size={16} />}
+            icon={<Repeat size={16} />}
             value={params.symmetry}
             options={[
               { value: 'none', label: 'None' },

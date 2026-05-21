@@ -162,7 +162,7 @@ export const UIOverlay: React.FC<UIOverlayProps> = ({
                       <Loader2 size={48} className="text-indigo-500 animate-spin" />
                   </div>
                   <div className="text-center">
-                      <h3 className="text-lg font-extrabold text-slate-800">Kimi is Building...</h3>
+                      <h3 className="text-lg font-extrabold text-slate-800">Gemini is Building...</h3>
                       <p className="text-slate-500 font-bold text-sm transition-all duration-300">
                           {LOADING_MESSAGES[loadingMsgIndex]}
                       </p>

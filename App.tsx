@@ -7,7 +7,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { VoxelEngine } from './services/VoxelEngine';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { Generators } from './utils/voxelGenerators';
-import { AppState, GenerationMetadata, TemplateMatchResult } from './types';
+import { AppState, GenerationMetadata, TemplateMatchResult, VoxelData } from './types';
 import { BottomPanel } from './components/BottomPanel';
 import { StatusPanel } from './components/StatusPanel';
 import { AdvancedParams } from './components/AdvancedParametersPanel';
@@ -40,6 +40,7 @@ const App: React.FC = () => {
   });
 
   const [appMode, setAppMode] = useState<AppMode | null>(null);
+  const [currentModelData, setCurrentModelData] = useState<VoxelData[]>([]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -51,7 +52,10 @@ const App: React.FC = () => {
     );
 
     engineRef.current = engine;
-    engine.loadInitialModel(Generators.Eagle());
+
+    const initialModel = Generators.Eagle();
+    engine.loadInitialModel(initialModel);
+    setCurrentModelData(initialModel);
 
     const handleResize = () => engine.handleResize();
     window.addEventListener('resize', handleResize);
@@ -67,10 +71,13 @@ const App: React.FC = () => {
 
   const handleModelChange = (model: PresetModel) => {
     setSelectedModel(model);
+
     if (engineRef.current) {
       const generator = Generators[model];
       if (generator) {
-        engineRef.current.loadInitialModel(generator());
+        const modelData = generator();
+        engineRef.current.loadInitialModel(modelData);
+        setCurrentModelData(modelData);
       }
     }
   };
@@ -78,6 +85,7 @@ const App: React.FC = () => {
   const handleToggleRotate = () => {
     const newState = !isAutoRotate;
     setIsAutoRotate(newState);
+
     if (engineRef.current) {
       engineRef.current.setAutoRotate(newState);
     }
@@ -120,6 +128,7 @@ const App: React.FC = () => {
         engineRef.current.loadInitialModel(voxels);
       }
 
+      setCurrentModelData(voxels);
       setGenerationMetadata(backendResult.metadata);
       setTemplateMatch(backendResult.templateMatch);
     } catch (err) {
@@ -150,10 +159,8 @@ const App: React.FC = () => {
   };
 
   const handleRebuild = () => {
-    const generator = Generators[selectedModel];
-    if (generator) {
-      const modelData = generator();
-      engineRef.current?.rebuild(modelData);
+    if (currentModelData.length > 0) {
+      engineRef.current?.rebuild(currentModelData);
     }
   };
 

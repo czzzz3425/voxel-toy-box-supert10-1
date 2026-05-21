@@ -42,6 +42,30 @@ function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Unknown backend generation error.';
 }
 
+function getErrorStatus(error: unknown) {
+  if (typeof error === 'object' && error !== null && 'status' in error) {
+    const value = (error as { status?: unknown }).status;
+    if (typeof value === 'number') {
+      return value;
+    }
+  }
+
+  return 500;
+}
+
+function getErrorCode(error: unknown) {
+  const status = getErrorStatus(error);
+  if (status === 429) {
+    return 'RATE_LIMITED';
+  }
+
+  if (status === 503) {
+    return 'MODEL_UNAVAILABLE';
+  }
+
+  return 'GEMINI_GENERATION_FAILED';
+}
+
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
     return res.status(405).send('Method Not Allowed');
@@ -104,6 +128,8 @@ export default async function handler(req: any, res: any) {
     return res.status(200).json(response);
   } catch (error) {
     const message = getErrorMessage(error);
+    const status = getErrorStatus(error);
+    const errorCode = getErrorCode(error);
     const fallbackBody = parseRequestBody(req.body);
 
     const databaseReport = await saveGenerationRecord({
@@ -121,12 +147,12 @@ export default async function handler(req: any, res: any) {
       success: false,
       warnings: ['The backend request failed before a valid voxel result was produced.'],
       error: message,
-      errorCode: 'GEMINI_GENERATION_FAILED',
+      errorCode,
       databaseReport,
       mode: 'fast',
       usedTwoStage: false,
     };
 
-    return res.status(500).json(response);
+    return res.status(status).json(response);
   }
 }
