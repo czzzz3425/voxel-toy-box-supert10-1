@@ -319,7 +319,16 @@ Return valid JSON in this shape:
     "symmetry": "bilateral",
     "voxelBudget": 200,
     "silhouetteKeywords": ["round ears", "small body"],
-    "structuralRules": ["Keep all main parts connected."]
+    "structuralRules": ["Keep all main parts connected."],
+    "partBreakdown": [
+      { "name": "core silhouette", "description": "Main body and head masses." },
+      { "name": "secondary features", "description": "Ears, face, and tail." }
+    ],
+    "mustHaveFeatures": ["clear rabbit ears", "stable connected base"],
+    "forbiddenFeatures": ["floating disconnected fragments"],
+    "primaryColors": ["#F6BDC0", "#CDE7BE", "#A9DEF9"],
+    "pose": "compact seated pose with a stable grounded base",
+    "proportionRules": ["Keep the ears readable without making them too thin."]
   }
 }`,
     'Kimi intent stage returned no ModelIntent.'
@@ -344,7 +353,15 @@ Return valid JSON in this shape:
 {
   "voxels": [
     { "x": 0, "y": 0, "z": 0, "color": "#FF5500" }
-  ]
+  ],
+  "complianceReport": {
+    "mustHaveFeaturesAddressed": ["feature 1"],
+    "forbiddenFeaturesAvoided": ["mistake 1"],
+    "primaryColorsUsed": ["#FF5500"],
+    "poseApplied": "short description",
+    "symmetryApplied": "short description",
+    "notes": ["optional note"]
+  }
 }`,
     'Kimi voxel stage returned no voxel payload.'
   );

@@ -44,6 +44,15 @@ export interface ModelIntent {
   voxelBudget: number;
   silhouetteKeywords: string[];
   structuralRules: string[];
+  partBreakdown: Array<{
+    name: string;
+    description: string;
+  }>;
+  mustHaveFeatures: string[];
+  forbiddenFeatures: string[];
+  primaryColors: string[];
+  pose: string;
+  proportionRules: string[];
 }
 
 export interface LegoApiCallRequest {

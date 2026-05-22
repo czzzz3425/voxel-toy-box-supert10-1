@@ -13,11 +13,18 @@ import {
   getVoxelPromptFromIntent,
   normalizeModelIntent,
 } from './modelCallTypes.js';
+import {
+  auditExpertVoxelCandidate,
+  buildExpertRepairFeedback,
+} from './expertValidation.js';
 
 const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
 const RETRYABLE_STATUS_CODES = new Set([502, 503, 504]);
 const MAX_GEMINI_RETRIES = 2;
 const INITIAL_RETRY_DELAY_MS = 1000;
+const MAX_EXPERT_VOXEL_ATTEMPTS = 2;
+
+type JsonRecord = Record<string, unknown>;
 
 function createGeminiClient() {
   configureOutboundProxyOnce();
@@ -137,17 +144,46 @@ async function withGeminiRetry<T>(stage: string, operation: () => Promise<T>): P
 
 function getVoxelSchema() {
   return {
-    type: Type.ARRAY,
-    items: {
-      type: Type.OBJECT,
-      properties: {
-        x: { type: Type.INTEGER },
-        y: { type: Type.INTEGER },
-        z: { type: Type.INTEGER },
-        color: { type: Type.STRING, description: 'Hex color code e.g. #FF5500' },
+    type: Type.OBJECT,
+    properties: {
+      voxels: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            x: { type: Type.INTEGER },
+            y: { type: Type.INTEGER },
+            z: { type: Type.INTEGER },
+            color: { type: Type.STRING, description: 'Hex color code e.g. #FF5500' },
+          },
+          required: ['x', 'y', 'z', 'color'],
+        },
       },
-      required: ['x', 'y', 'z', 'color'],
+      complianceReport: {
+        type: Type.OBJECT,
+        properties: {
+          mustHaveFeaturesAddressed: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
+          },
+          forbiddenFeaturesAvoided: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
+          },
+          primaryColorsUsed: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
+          },
+          poseApplied: { type: Type.STRING },
+          symmetryApplied: { type: Type.STRING },
+          notes: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
+          },
+        },
+      },
     },
+    required: ['voxels'],
   };
 }
 
@@ -169,6 +205,34 @@ function getIntentSchema() {
         type: Type.ARRAY,
         items: { type: Type.STRING },
       },
+      partBreakdown: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            name: { type: Type.STRING },
+            description: { type: Type.STRING },
+          },
+          required: ['name', 'description'],
+        },
+      },
+      mustHaveFeatures: {
+        type: Type.ARRAY,
+        items: { type: Type.STRING },
+      },
+      forbiddenFeatures: {
+        type: Type.ARRAY,
+        items: { type: Type.STRING },
+      },
+      primaryColors: {
+        type: Type.ARRAY,
+        items: { type: Type.STRING },
+      },
+      pose: { type: Type.STRING },
+      proportionRules: {
+        type: Type.ARRAY,
+        items: { type: Type.STRING },
+      },
     },
     required: [
       'subject',
@@ -179,6 +243,12 @@ function getIntentSchema() {
       'voxelBudget',
       'silhouetteKeywords',
       'structuralRules',
+      'partBreakdown',
+      'mustHaveFeatures',
+      'forbiddenFeatures',
+      'primaryColors',
+      'pose',
+      'proportionRules',
     ],
   };
 }
@@ -189,6 +259,70 @@ function parseJsonResponse<T>(rawText: string | undefined, fallbackMessage: stri
   }
 
   return JSON.parse(rawText) as T;
+}
+
+function isVoxelLike(value: unknown): value is VoxelData {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const record = value as JsonRecord;
+  return (
+    typeof record.x === 'number' &&
+    Number.isFinite(record.x) &&
+    typeof record.y === 'number' &&
+    Number.isFinite(record.y) &&
+    typeof record.z === 'number' &&
+    Number.isFinite(record.z) &&
+    (typeof record.color === 'number' || typeof record.color === 'string')
+  );
+}
+
+function findVoxelArrayDeep(payload: unknown, visited = new Set<unknown>()): VoxelData[] | null {
+  if (!payload || visited.has(payload)) {
+    return null;
+  }
+
+  if (Array.isArray(payload)) {
+    if (payload.length > 0 && payload.every(isVoxelLike)) {
+      return payload as VoxelData[];
+    }
+
+    visited.add(payload);
+    for (const item of payload) {
+      const nested = findVoxelArrayDeep(item, visited);
+      if (nested && nested.length > 0) {
+        return nested;
+      }
+    }
+
+    return null;
+  }
+
+  if (typeof payload !== 'object') {
+    return null;
+  }
+
+  visited.add(payload);
+  const record = payload as JsonRecord;
+  for (const value of Object.values(record)) {
+    const nested = findVoxelArrayDeep(value, visited);
+    if (nested && nested.length > 0) {
+      return nested;
+    }
+  }
+
+  return null;
+}
+
+function parseVoxelResponse(rawText: string | undefined, fallbackMessage: string): VoxelData[] {
+  const payload = parseJsonResponse<unknown>(rawText, fallbackMessage);
+  const voxels = findVoxelArrayDeep(payload);
+  if (!voxels || voxels.length === 0) {
+    throw new Error(fallbackMessage);
+  }
+
+  return voxels;
 }
 
 export async function callGeminiFastMode(
@@ -209,7 +343,7 @@ export async function callGeminiFastMode(
     })
   );
 
-  const voxels = parseJsonResponse<VoxelData[]>(
+  const voxels = parseVoxelResponse(
     response.text,
     'Gemini fast mode returned no voxel payload.'
   );
@@ -242,13 +376,14 @@ export async function callGeminiIntent(
 
 export async function callGeminiVoxelFromIntent(
   systemContext: string,
-  intent: ModelIntent
+  intent: ModelIntent,
+  repairFeedback: string[] = []
 ): Promise<VoxelData[]> {
   const ai = createGeminiClient();
   const response = await withGeminiRetry('expert-mode voxel generation', () =>
     ai.models.generateContent({
       model: getGeminiModel(),
-      contents: getVoxelPromptFromIntent(systemContext, intent),
+      contents: getVoxelPromptFromIntent(systemContext, intent, repairFeedback),
       config: {
         responseMimeType: 'application/json',
         responseSchema: getVoxelSchema(),
@@ -256,7 +391,7 @@ export async function callGeminiVoxelFromIntent(
     })
   );
 
-  return parseJsonResponse<VoxelData[]>(
+  return parseVoxelResponse(
     response.text,
     'Gemini voxel stage returned no voxel payload.'
   );
@@ -273,8 +408,33 @@ export async function generateGeminiVoxelResult(
     const safeOptions = options ?? {};
     const rawIntent = await callGeminiIntent(systemContext, prompt, safeOptions);
     const intent = normalizeModelIntent(rawIntent);
-    const voxels = await callGeminiVoxelFromIntent(systemContext, intent);
-    return { voxels, intent, usedTwoStage: true };
+    let repairFeedback: string[] = [];
+    let bestAudit:
+      | ReturnType<typeof auditExpertVoxelCandidate>
+      | null = null;
+
+    for (let attempt = 0; attempt < MAX_EXPERT_VOXEL_ATTEMPTS; attempt += 1) {
+      const candidateVoxels = await callGeminiVoxelFromIntent(
+        systemContext,
+        intent,
+        repairFeedback
+      );
+      const audit = auditExpertVoxelCandidate(intent, candidateVoxels);
+
+      if (!bestAudit || audit.score > bestAudit.score) {
+        bestAudit = audit;
+      }
+
+      if (audit.acceptable) {
+        return { voxels: audit.repairedVoxels, intent, usedTwoStage: true };
+      }
+
+      repairFeedback = buildExpertRepairFeedback(intent, audit.reasons);
+    }
+
+    if (bestAudit) {
+      return { voxels: bestAudit.repairedVoxels, intent, usedTwoStage: true };
+    }
   }
 
   const fastResult = await callGeminiFastMode(systemContext, prompt, options);
