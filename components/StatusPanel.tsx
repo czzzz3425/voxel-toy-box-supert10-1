@@ -21,12 +21,14 @@ export const StatusPanel: React.FC<StatusPanelProps> = ({
 }) => {
   if (error) {
     return (
-      <div className="absolute top-24 left-1/2 -translate-x-1/2 z-20 w-full max-w-md px-4">
-        <GenerationError
-          error={error}
-          onRetry={onRetry}
-          onDismiss={onDismissError}
-        />
+      <div className="absolute top-24 left-1/2 -translate-x-1/2 z-20 w-full max-w-md px-4 pointer-events-none">
+        <div className="pointer-events-auto">
+          <GenerationError
+            error={error}
+            onRetry={onRetry}
+            onDismiss={onDismissError}
+          />
+        </div>
       </div>
     );
   }
