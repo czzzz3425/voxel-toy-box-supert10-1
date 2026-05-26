@@ -1,7 +1,0 @@
-export * from './sedanCarGenerator.js';
-export * from './busCityGenerator.js';
-export * from './fireTruckGenerator.js';
-export * from './houseSmallGenerator.js';
-export * from './dogCorgiGenerator.js';
-export * from './foxSittingGenerator.js';
-export * from './penguinStandingGenerator.js';
