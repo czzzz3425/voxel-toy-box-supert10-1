@@ -9,7 +9,8 @@ import type * as THREE from 'three';
 export enum AppState {
   STABLE = 'STABLE',
   DISMANTLING = 'DISMANTLING',
-  REBUILDING = 'REBUILDING'
+  REBUILDING = 'REBUILDING',
+  LAYER_BUILDING = 'LAYER_BUILDING'
 }
 
 // Bian: align backend generation options with the advanced frontend params.
@@ -44,15 +45,6 @@ export interface ModelIntent {
   voxelBudget: number;
   silhouetteKeywords: string[];
   structuralRules: string[];
-  partBreakdown: Array<{
-    name: string;
-    description: string;
-  }>;
-  mustHaveFeatures: string[];
-  forbiddenFeatures: string[];
-  primaryColors: string[];
-  pose: string;
-  proportionRules: string[];
 }
 
 export interface LegoApiCallRequest {
